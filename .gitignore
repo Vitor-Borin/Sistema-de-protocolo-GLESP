@@ -1,11 +1,4 @@
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
+# Dependencies
 node_modules
 npm-debug.log*
 yarn-debug.log*
@@ -13,16 +6,19 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Build outputs
 dist
 dist-ssr
 *.local
 
-.env
+# Environment variables
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
+# Logs
+logs
+*.log
+
+# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -33,44 +29,11 @@ dist-ssr
 *.sln
 *.sw?
 
+# OS generated files
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-*.tmp
-*.temp
+# Cache
 .cache
-
-coverage
-*.lcov
-
-.nyc_output
-
-jspm_packages/
-
-.npm
-
 .eslintcache
-
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-.node_repl_history
-
-*.tgz
-
-.yarn-integrity
-
-.parcel-cache
-
-.next
-
-.nuxt
-
-.out
-.storybook-out
-
-tmp/
-temp/
