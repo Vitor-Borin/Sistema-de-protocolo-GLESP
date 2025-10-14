@@ -1,100 +1,122 @@
-import { useState } from "react"
-import { GlespLogo } from "./GlespLogo"
-import { Eye, EyeOff, LogIn } from "lucide-react"
+import React, { useState, useCallback, useMemo } from 'react';
+import { GlespLogo } from './GlespLogo';
+import { Loader, LogIn } from 'lucide-react';
 
-export default function AuthComponent({ onLogin }) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+const AuthComponent = React.memo(({ onLogin }) => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    setIsLoading(true)
+    // Dados de teste para o login - memoizado
+    const MOCK_USER = useMemo(() => ({
+        displayName: 'Eduardo',
+        email: 'Eduardo@glesp.org.br',
+        uid: '12345-test'
+    }), []);
 
-    // Simulate login
-    setTimeout(() => {
-      onLogin({
-        displayName: "Eduardo Silva",
-        email: email || "eduardo@glesp.org.br",
-      })
-      setIsLoading(false)
-    }, 1000)
-  }
+    const handleLogin = useCallback((e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
 
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md animate-fade-in-up">
-        <div className="bg-card border border-border rounded-2xl shadow-lg p-8">
-          <div className="text-center mb-8">
-            <GlespLogo className="mx-auto h-16 w-auto mb-6" />
-            <h1 className="text-3xl font-bold text-card-foreground mb-2">Sistema de Protocolos</h1>
-            <p className="text-muted-foreground">Grande Loja Maçônica do Estado de São Paulo</p>
-          </div>
+        // Simula um pequeno atraso de rede
+        setTimeout(() => {
+            if (email === 'Eduardo@glesp.org.br' && password === '123456') {
+                onLogin(MOCK_USER);
+            } else {
+                setError('Credenciais inválidas. Use os dados de teste.');
+            }
+            setLoading(false);
+        }, 500);
+    }, [email, password, onLogin, MOCK_USER]);
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-card-foreground mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                className="w-full px-4 py-3 border border-border rounded-xl bg-input focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                required
-              />
+    return (
+        <div className="min-h-screen bg-gray-50 dark:bg-[var(--bg-secondary)] flex flex-col justify-center items-center p-4">
+            <div className="max-w-md w-full bg-white dark:bg-[var(--bg-card)] rounded-xl shadow-lg p-8 space-y-6">
+                <div className="text-center">
+                    <GlespLogo className="mx-auto h-24 w-auto" />
+                    <h2 
+                        className="
+                            mt-4 text-3xl font-extrabold text-gray-900 dark:text-[var(--text-primary)]"
+                    >
+                        GLESP - Sistema de Protocolo
+                    </h2>
+                    <p 
+                        className="
+                            mt-2 text-sm text-gray-600 dark:text-[var(--text-secondary)]"
+                    >
+                        Faça login para continuar
+                    </p>
+                </div>
+                <form className="space-y-6" onSubmit={handleLogin}>
+                    <div className="rounded-md shadow-sm">
+                        <div>
+                            <input 
+                                id="email-address" 
+                                name="email" 
+                                type="email" 
+                                autoComplete="email" 
+                                required 
+                                className="
+                                    appearance-none rounded-none relative block w-full px-3 py-2 
+                                    border border-gray-300 dark:border-[var(--border-primary)] placeholder-gray-500 text-gray-900 dark:text-[var(--text-primary)] rounded-t-md 
+                                    focus:z-10 sm:text-sm"
+                                placeholder="Endereço de e-mail" 
+                                value={email} 
+                                onChange={(e) => setEmail(e.target.value)} 
+                            />
+                        </div>
+                        <div>
+                            <input 
+                                id="password" 
+                                name="password" 
+                                type="password" 
+                                autoComplete="current-password" 
+                                required 
+                                className="
+                                    appearance-none rounded-none relative block w-full px-3 py-2 
+                                    border border-gray-300 dark:border-[var(--border-primary)] placeholder-gray-500 text-gray-900 dark:text-[var(--text-primary)] rounded-b-md 
+                                    focus:z-10 sm:text-sm"
+                                placeholder="Senha" 
+                                value={password} 
+                                onChange={(e) => setPassword(e.target.value)} 
+                            />
+                        </div>
+                    </div>
+
+                    {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+
+                    <div>
+                        <button 
+                            type="submit" 
+                            disabled={loading} 
+                            className="
+                                group relative w-full flex justify-center py-2 px-4 border border-transparent 
+                                text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 
+                                disabled:bg-blue-300"
+                        >
+                            {loading ? (
+                                <Loader className="animate-spin h-5 w-5 text-white" />
+                            ) : (
+                                <>
+                                    <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                                        <LogIn className="h-5 w-5 text-blue-400 group-hover:text-blue-300" />
+                                    </span>
+                                    Entrar
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
+                 <div className="text-sm text-center text-gray-500">
+                    <p>Modo de teste: Use as credenciais fornecidas.</p>
+                </div>
             </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-card-foreground mb-2">
-                Senha
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 pr-12 border border-border rounded-xl bg-input focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 disabled:bg-primary/50 transition-all duration-200 hover:scale-[1.02]"
-            >
-              {isLoading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-foreground border-t-transparent" />
-              ) : (
-                <>
-                  <LogIn className="h-5 w-5" />
-                  <span>Entrar</span>
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="mt-8 pt-6 border-t border-border text-center">
-            <p className="text-xs text-muted-foreground">
-              Sistema desenvolvido para a Grande Loja Maçônica do Estado de São Paulo
-            </p>
-          </div>
         </div>
-      </div>
-    </div>
-  )
-}
+    );
+});
+
+AuthComponent.displayName = 'AuthComponent';
+
+export default AuthComponent;

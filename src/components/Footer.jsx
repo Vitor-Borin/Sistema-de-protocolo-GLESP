@@ -1,11 +1,15 @@
-export default function Footer() {
-  return (
-    <footer className="bg-card border-t border-border px-6 py-4">
-      <div className="text-center">
-        <p className="text-sm text-muted-foreground">
-          © 2025 Grande Loja Maçônica do Estado de São Paulo - Sistema de Protocolos
-        </p>
-      </div>
-    </footer>
-  )
-}
+import React from 'react';
+
+const Footer = React.memo(() => {
+    const currentYear = new Date().getFullYear();
+    
+    return (
+        <footer className="bg-white dark:bg-[var(--bg-card)] mt-auto">
+            <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+                <p>&copy; {currentYear} Grande Loja Maçônica do Estado de São Paulo</p>
+            </div>
+        </footer>
+    );
+});
+
+export default Footer;

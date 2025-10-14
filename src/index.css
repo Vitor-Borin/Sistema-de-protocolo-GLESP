@@ -1,18 +1,420 @@
 @import "tailwindcss";
 
+/* Variáveis CSS para temas */
 :root {
-  --primary-color: #0f766e;
-  --primary-hover: #0d9488;
-  --secondary-color: #1e40af;
-  --accent-color: #059669;
-  --background: #f8fafc;
-  --surface: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --border-color: #e2e8f0;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --border-primary: #e5e7eb;
+  --border-secondary: #d1d5db;
+  --shadow-primary: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-secondary: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Modo noturno premium */
+.dark {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-quaternary: #475569;
+  --bg-card: #1e293b;
+  --bg-hover: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --text-quaternary: #64748b;
+  --border-primary: #334155;
+  --border-secondary: #475569;
+  --border-accent: #3b82f6;
+  --shadow-primary: 0 4px 6px -1px rgb(0 0 0 / 0.6), 0 2px 4px -2px rgb(0 0 0 / 0.6);
+  --shadow-secondary: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 10px 10px -5px rgb(0 0 0 / 0.4);
+  --shadow-glow: 0 0 30px rgb(59 130 246 / 0.3);
+  --shadow-card: 0 8px 32px rgb(0 0 0 / 0.4);
+  --gradient-primary: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  --gradient-accent: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --gradient-card: linear-gradient(145deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+  --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+}
+
+/* Alto contraste */
+.high-contrast {
+  --text-primary: #000000 !important;
+  --text-secondary: #000000 !important;
+  --bg-primary: #ffffff !important;
+  --bg-secondary: #ffffff !important;
+  --border-primary: #000000 !important;
+  --border-secondary: #000000 !important;
+}
+
+.high-contrast.dark {
+  --text-primary: #ffffff !important;
+  --text-secondary: #ffffff !important;
+  --bg-primary: #000000 !important;
+  --bg-secondary: #000000 !important;
+  --border-primary: #ffffff !important;
+  --border-secondary: #ffffff !important;
+}
+
+/* Aplicar variáveis CSS */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Melhorias específicas para modo noturno premium */
+.dark body {
+  background: radial-gradient(ellipse at top, #1e293b 0%, #0f172a 100%);
+  min-height: 100vh;
+}
+
+/* Cards com design premium */
+.dark .bg-white {
+  background: var(--gradient-card) !important;
+  border: 1px solid var(--border-primary) !important;
+  box-shadow: var(--shadow-card) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.dark .bg-gray-50 {
+  background: var(--bg-secondary) !important;
+}
+
+.dark .bg-gray-100 {
+  background: var(--bg-tertiary) !important;
+}
+
+/* Sidebar premium */
+.dark nav {
+  background: var(--gradient-primary) !important;
+  border-right: 1px solid var(--border-primary) !important;
+  box-shadow: var(--shadow-secondary) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+/* Header com efeito glass */
+.dark header {
+  background: rgba(28, 28, 28, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
+  box-shadow: 0 4px 20px rgb(0 0 0 / 0.3) !important;
+}
+
+/* Botões premium no modo escuro */
+.dark .bg-blue-600 {
+  background: var(--gradient-accent) !important;
+  box-shadow: var(--shadow-glow) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark .bg-blue-600:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 40px rgb(59 130 246 / 0.4) !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Inputs premium */
+.dark input, .dark textarea, .dark select {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.dark input:focus, .dark textarea:focus, .dark select:focus {
+  border-color: var(--border-accent) !important;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.2) !important;
+  background: var(--bg-hover) !important;
+  outline: none !important;
+}
+
+/* Lista de protocolos premium */
+.dark .divide-y > * {
+  border-color: var(--border-primary) !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background: var(--bg-hover) !important;
+  transform: translateX(4px) !important;
+  transition: all 0.2s ease !important;
+}
+
+.dark .hover\:bg-gray-700:hover {
+  background: var(--bg-hover) !important;
+  transform: translateX(4px) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Estatísticas com design premium */
+.dark .bg-blue-100 {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1) !important;
+}
+
+.dark .bg-green-100 {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%) !important;
+  border: 1px solid rgba(34, 197, 94, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1) !important;
+}
+
+.dark .bg-purple-100 {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%) !important;
+  border: 1px solid rgba(168, 85, 247, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.1) !important;
+}
+
+/* Paginação melhorada */
+.dark .border-gray-300 {
+  border-color: var(--border-primary) !important;
+}
+
+.dark .text-gray-500 {
+  color: var(--text-tertiary) !important;
+}
+
+.dark .text-gray-400 {
+  color: var(--text-quaternary) !important;
+}
+
+/* Animações suaves */
+.dark * {
+  transition: all 0.2s ease-in-out !important;
+}
+
+/* Scrollbar premium para modo escuro */
+.dark ::-webkit-scrollbar {
+  width: 10px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 5px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--border-secondary) 0%, var(--border-accent) 100%);
+  border-radius: 5px;
+  border: 2px solid var(--bg-secondary);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--border-accent) 0%, #1d4ed8 100%);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+/* Efeitos de hover premium */
+.dark .group:hover {
+  transform: translateY(-1px) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Animações suaves premium */
+.dark * {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Efeito de brilho sutil */
+.dark .shadow-lg {
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Corrigir TODOS os hovers no modo escuro */
+.dark .hover\:bg-white:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-gray-200:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-gray-300:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-gray-400:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-gray-500:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-gray-600:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-gray-700:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-gray-800:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-gray-900:hover {
+  background: var(--bg-hover) !important;
+}
+
+/* Corrigir hovers de cores específicas */
+.dark .hover\:bg-blue-50:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-green-50:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-purple-50:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-orange-50:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-indigo-50:hover {
+  background: var(--bg-hover) !important;
+}
+
+/* Modo noturno com classes do Tailwind */
+.dark .bg-white {
+  background-color: var(--bg-primary) !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: var(--bg-secondary) !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.dark .text-gray-900 {
+  color: var(--text-primary) !important;
+}
+
+.dark .text-gray-800 {
+  color: var(--text-primary) !important;
+}
+
+.dark .text-gray-700 {
+  color: var(--text-secondary) !important;
+}
+
+.dark .text-gray-600 {
+  color: var(--text-secondary) !important;
+}
+
+.dark .text-gray-500 {
+  color: var(--text-tertiary) !important;
+}
+
+.dark .border-gray-200 {
+  border-color: var(--border-primary) !important;
+}
+
+.dark .border-gray-300 {
+  border-color: var(--border-secondary) !important;
+}
+
+/* Alto contraste */
+.high-contrast .bg-white {
+  background-color: var(--bg-primary) !important;
+}
+
+.high-contrast .bg-gray-50 {
+  background-color: var(--bg-secondary) !important;
+}
+
+.high-contrast .text-gray-900 {
+  color: var(--text-primary) !important;
+}
+
+.high-contrast .text-gray-800 {
+  color: var(--text-primary) !important;
+}
+
+.high-contrast .text-gray-700 {
+  color: var(--text-secondary) !important;
+}
+
+.high-contrast .text-gray-600 {
+  color: var(--text-secondary) !important;
+}
+
+.high-contrast .border-gray-200 {
+  border-color: var(--border-primary) !important;
+}
+
+.high-contrast .border-gray-300 {
+  border-color: var(--border-secondary) !important;
+}
+
+/* Texto grande */
+.large-text {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.large-text h1 {
+  font-size: 2.5rem;
+  line-height: 3rem;
+}
+
+.large-text h2 {
+  font-size: 2rem;
+  line-height: 2.5rem;
+}
+
+.large-text h3 {
+  font-size: 1.75rem;
+  line-height: 2.25rem;
+}
+
+.large-text button {
+  font-size: 1.125rem;
+  padding: 0.75em 1.5em;
+}
+
+.large-text input, .large-text textarea, .large-text select {
+  font-size: 1.125rem;
+  padding: 0.75em 1em;
+}
+
+/* Movimento reduzido */
+.reduced-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Indicador de foco melhorado */
+.focus-visible button:focus-visible,
+.focus-visible input:focus-visible,
+.focus-visible textarea:focus-visible,
+.focus-visible select:focus-visible,
+.focus-visible a:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
 button {
@@ -22,88 +424,20 @@ button {
   font-size: 1em;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: var(--shadow-sm);
-}
-
-button:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.card {
-  background: var(--surface);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
-  transition: all 0.3s ease;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.sidebar {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  box-shadow: var(--shadow-lg);
-}
-
-input,
-textarea,
-select {
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  padding: 0.75rem;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-  background: var(--surface);
-}
-
-input:focus,
-textarea:focus,
-select:focus {
+  transition: border-color 0.25s;
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgb(15 118 110 / 0.1);
 }
 
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+button:focus {
+  outline: none;
+  box-shadow: none;
 }
 
-.modal-content {
-  background: var(--surface);
-  border-radius: 16px;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-color);
-}
-
-table {
-  border-collapse: separate;
-  border-spacing: 0;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-th {
-  background: var(--background);
-  font-weight: 600;
-  color: var(--text-primary);
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-td {
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--surface);
-}
-
-tr:hover td {
-  background: var(--background);
+/* Bordas de foco mais suaves para inputs */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #93c5fd !important; /* azul mais claro */
+  box-shadow: 0 0 0 1px #93c5fd !important; /* sombra suave */
 }
 
 @layer base {
@@ -121,21 +455,6 @@ tr:hover td {
       transform: translateY(0);
     }
   }
-
-  .animate-slide-in {
-    animation: slideIn 0.3s ease-out forwards;
-  }
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateX(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
 }
 
 /* Estilos específicos para impressão */
@@ -144,18 +463,42 @@ tr:hover td {
   body * {
     visibility: hidden;
   }
-
+  
   /* Mostra apenas o conteúdo de impressão e seus filhos */
-  .printable-area,
-  .printable-area * {
+  .printable-area, .printable-area * {
     visibility: visible;
   }
-
+  
   /* Garante que a área de impressão ocupe toda a página */
   .printable-area {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  
+  /* Remove margens e espaçamentos desnecessários */
+  @page {
+    margin: 0.5in;
+    size: A4;
+  }
+  
+  /* Estilo para cada via do comprovante */
+  .printable-area .receipt-copy {
+    page-break-inside: avoid;
+    margin-bottom: 10px;
+    height: auto;
+    min-height: 40vh;
+  }
+  
+  /* Segunda via com borda tracejada */
+  .printable-area .receipt-copy.second-copy {
+    border-top: 2px dashed #666 !important;
+    margin-top: 20px;
+    padding-top: 20px;
   }
 }

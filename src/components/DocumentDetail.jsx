@@ -1,93 +1,84 @@
-"use client"
-import { ChevronLeft, Printer, Edit, Trash2 } from "lucide-react"
+import React, { useMemo } from 'react';
+import { ChevronLeft, Printer, Edit, Trash2 } from 'lucide-react';
 
-export default function DocumentDetail({ doc, documentTypes, onBack, onDelete, onEdit, onPrint }) {
-  if (!doc) return null
-
-  const docType = documentTypes.find((t) => t.id === doc.typeId)
-  const protocolDate = doc.createdAt
-    ? new Date(doc.createdAt.seconds * 1000).toLocaleString("pt-BR")
-    : "Data Indisponível"
-
-  const DetailItem = ({ label, value }) => (
-    <div className="space-y-2">
-      <p className="text-sm font-semibold text-muted-foreground">{label}</p>
-      <p className="text-base text-card-foreground bg-muted/30 px-4 py-3 rounded-lg border border-border/50">
-        {value || "-"}
-      </p>
+const DetailItem = React.memo(({ label, value }) => (
+    <div>
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{label}</p>
+        <p className="text-md text-gray-900 dark:text-white font-medium">{value || '-'}</p>
     </div>
-  )
+));
 
-  return (
-    <div className="animate-fade-in-up">
-      <div className="bg-card border border-border p-8 rounded-2xl shadow-sm">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-border">
-          <button
-            onClick={onBack}
-            className="flex items-center space-x-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-4 sm:mb-0 transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-muted/50"
-          >
-            <ChevronLeft className="h-5 w-5" />
-            <span>Voltar para a lista</span>
-          </button>
+const DocumentDetail = React.memo(({ doc, documentTypes, onBack, onDelete, onEdit, onPrint }) => {
+    if (!doc) return null;
 
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => onPrint(doc)}
-              className="flex items-center space-x-2 px-4 py-2.5 border border-border text-sm font-medium rounded-xl text-card-foreground bg-card hover:bg-muted/50 transition-all duration-200"
-            >
-              <Printer className="h-4 w-4" />
-              <span>Imprimir</span>
-            </button>
-            <button
-              onClick={() => onEdit(doc)}
-              className="flex items-center space-x-2 px-4 py-2.5 border border-border text-sm font-medium rounded-xl text-card-foreground bg-card hover:bg-muted/50 transition-all duration-200"
-            >
-              <Edit className="h-4 w-4" />
-              <span>Editar</span>
-            </button>
-            <button
-              onClick={() => onDelete(doc.id)}
-              className="flex items-center space-x-2 px-4 py-2.5 border border-transparent text-sm font-medium rounded-xl text-destructive-foreground bg-destructive hover:bg-destructive/90 transition-all duration-200"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>Excluir</span>
-            </button>
-          </div>
-        </div>
+    const docType = useMemo(() => 
+        documentTypes.find(t => t.id === doc.typeId), 
+        [documentTypes, doc.typeId]
+    );
+    
+    const protocolDate = useMemo(() => 
+        doc.createdAt ? new Date(doc.createdAt.seconds * 1000).toLocaleString('pt-BR') : 'Data Indisponível',
+        [doc.createdAt]
+    );
 
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="bg-primary/10 p-3 rounded-xl">
-              <span className="text-2xl">📋</span>
+    return (
+        <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+            {/* Cabeçalho */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
+                <button 
+                    onClick={onBack}
+                    className="flex items-center space-x-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 sm:mb-0 transition-colors duration-200"
+                >
+                    <ChevronLeft className="h-5 w-5" />
+                    <span>Voltar para a lista</span>
+                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                     <button 
+                        onClick={() => onPrint(doc)}
+                        className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
+                    >
+                        <Printer className="h-4 w-4" />
+                        <span>Imprimir</span>
+                    </button>
+                    <button 
+                        onClick={() => onEdit(doc)}
+                        className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
+                    >
+                        <Edit className="h-4 w-4" />
+                        <span>Editar</span>
+                    </button>
+                    <button 
+                        onClick={() => onDelete(doc.id)}
+                        className="flex items-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 transition-all duration-200 shadow-md"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        <span>Excluir</span>
+                    </button>
+                </div>
             </div>
+
+            {/* Título Principal */}
             <div>
-              <h2 className="text-3xl font-bold text-card-foreground">
-                {docType ? docType.name : "Tipo Desconhecido"}
-              </h2>
-              <p className="text-lg text-muted-foreground font-mono mt-1">{doc.docNumber}</p>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{docType ? docType.name : "Tipo Desconhecido"}</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-mono">{doc.docNumber}</p>
             </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <DetailItem label="Data e Hora do Protocolo" value={protocolDate} />
-          <DetailItem label="Quantidade" value={doc.quantity} />
-          <DetailItem label="Nº da Loja" value={doc.shopNumber} />
-          <DetailItem label="Entregue por" value={doc.deliveredBy} />
-          <DetailItem label="Protocolado por" value={doc.protocolledBy} />
-
-          <div className="col-span-full">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-muted-foreground">Descrição / Observações</p>
-              <div className="bg-muted/30 border border-border/50 rounded-lg p-6 min-h-[120px]">
-                <p className="text-base text-card-foreground leading-relaxed">
-                  {doc.description || "Nenhuma descrição fornecida."}
-                </p>
-              </div>
+            
+            {/* Detalhes */}
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+                <DetailItem label="Data e Hora do Protocolo" value={protocolDate} />
+                <DetailItem label="Quantidade" value={doc.quantity} />
+                <DetailItem label="Nº da Loja" value={doc.shopNumber} />
+                <DetailItem label="Entregue por" value={doc.deliveredBy} />
+                <DetailItem label="Protocolado por" value={doc.protocolledBy} />
+                <div className="col-span-2">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Descrição / Observações</p>
+                    <p className="text-md text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700 min-h-[80px]">
+                        {doc.description || '-'}
+                    </p>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
-  )
-}
+    );
+});
+
+export default DocumentDetail;

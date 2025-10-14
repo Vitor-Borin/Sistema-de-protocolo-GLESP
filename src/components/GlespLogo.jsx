@@ -1,7 +1,6 @@
-export function GlespLogo({ className = "h-8 w-auto" }) {
-  return (
-    <div className={`${className} flex items-center justify-center`}>
-      
-    </div>
-  )
-}
+import React from 'react';
+import glespLogo from '../assets/brasao-glesp.png';
+
+export const GlespLogo = React.memo(({ className }) => (
+    <img src={glespLogo} alt="Brasão da GLESP" className={className} />
+));
