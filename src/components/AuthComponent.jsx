@@ -1,6 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { GlespLogo } from './GlespLogo';
-import { Loader, LogIn } from 'lucide-react';
+import { Loader, LogIn, Shield, Users } from 'lucide-react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 
 const AuthComponent = React.memo(({ onLogin }) => {
     const [email, setEmail] = useState('');
@@ -8,28 +11,48 @@ const AuthComponent = React.memo(({ onLogin }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Dados de teste para o login - memoizado
-    const MOCK_USER = useMemo(() => ({
-        displayName: 'Eduardo',
-        email: 'Eduardo@glesp.org.br',
-        uid: '12345-test'
-    }), []);
-
-    const handleLogin = useCallback((e) => {
+    const handleLogin = useCallback(async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
-        // Simula um pequeno atraso de rede
-        setTimeout(() => {
-            if (email === 'Eduardo@glesp.org.br' && password === '123456') {
-                onLogin(MOCK_USER);
+        try {
+            // Autenticar com Firebase
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Buscar dados do usuário no Firestore
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                const userWithRole = {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: userData.displayName || user.displayName,
+                    role: userData.role || 'user',
+                    department: userData.department || 'N/A'
+                };
+                
+                onLogin(userWithRole);
             } else {
-                setError('Credenciais inválidas. Use os dados de teste.');
+                setError('Usuário não encontrado no sistema. Contate o administrador.');
             }
+        } catch (error) {
+            console.error('Erro no login:', error);
+            if (error.code === 'auth/user-not-found') {
+                setError('Usuário não encontrado.');
+            } else if (error.code === 'auth/wrong-password') {
+                setError('Senha incorreta.');
+            } else if (error.code === 'auth/invalid-email') {
+                setError('Email inválido.');
+            } else {
+                setError('Erro ao fazer login. Tente novamente.');
+            }
+        } finally {
             setLoading(false);
-        }, 500);
-    }, [email, password, onLogin, MOCK_USER]);
+        }
+    }, [email, password, onLogin]);
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-[var(--bg-secondary)] flex flex-col justify-center items-center p-4">
@@ -48,6 +71,23 @@ const AuthComponent = React.memo(({ onLogin }) => {
                     >
                         Faça login para continuar
                     </p>
+                    
+                    {/* Informações sobre perfis */}
+                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center justify-center space-x-4 text-sm">
+                            <div className="flex items-center space-x-1 text-blue-600 dark:text-blue-400">
+                                <Shield className="h-4 w-4" />
+                                <span>Administrador</span>
+                            </div>
+                            <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-400">
+                                <Users className="h-4 w-4" />
+                                <span>Usuário</span>
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            Contas criadas pelo administrador
+                        </p>
+                    </div>
                 </div>
                 <form className="space-y-6" onSubmit={handleLogin}>
                     <div className="rounded-md shadow-sm">
@@ -110,7 +150,7 @@ const AuthComponent = React.memo(({ onLogin }) => {
                     </div>
                 </form>
                  <div className="text-sm text-center text-gray-500">
-                    <p>Modo de teste: Use as credenciais fornecidas.</p>
+                    <p>Sistema de usuários gerenciado pelo administrador</p>
                 </div>
             </div>
         </div>

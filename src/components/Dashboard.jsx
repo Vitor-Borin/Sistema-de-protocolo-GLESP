@@ -58,6 +58,9 @@ export default function Dashboard({ user, onLogout }) {
     const [searchQuery, setSearchQuery] = useState('');
     
     const [currentView, setCurrentView] = useState('list'); // 'list', 'detail', 'settings', 'logs', 'config'
+    
+    // Verificar se usuário é administrador
+    const isAdmin = user?.role === 'admin';
     const [selectedDoc, setSelectedDoc] = useState(null);
     
     // Estado para logs
@@ -282,6 +285,30 @@ export default function Dashboard({ user, onLogout }) {
             case 'config':
                 return <SimpleConfig user={user} />;
             case 'logs':
+                // Apenas administradores podem acessar logs
+                if (!isAdmin) {
+                    return (
+                        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-8 max-w-md">
+                                <div className="flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/40 rounded-full mx-auto mb-4">
+                                    <Shield className="h-8 w-8 text-red-600 dark:text-red-400" />
+                                </div>
+                                <h3 className="text-xl font-semibold text-red-800 dark:text-red-200 mb-2">
+                                    Acesso Restrito
+                                </h3>
+                                <p className="text-red-600 dark:text-red-300 mb-4">
+                                    Apenas administradores podem visualizar os logs do sistema.
+                                </p>
+                                <button
+                                    onClick={() => setCurrentView('list')}
+                                    className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                                >
+                                    Voltar ao Painel
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
                 return <LogPage logs={logs} onClearLogs={handleClearLogs} onDeleteLog={handleDeleteLog} />;
             case 'list':
             default:
@@ -566,25 +593,28 @@ export default function Dashboard({ user, onLogout }) {
                             <span className={`whitespace-nowrap transition-all duration-200 ${isSidebarOpen ? 'ml-3 opacity-100' : 'opacity-0 w-0'}`}>Configurações</span>
                         </button>
                     </li>
-                    <li>
-                        <button 
-                            onClick={() => {
-                                setCurrentView('logs');
-                                announce('Navegando para logs');
-                                // Fechar sidebar em mobile após clicar
-                                if (window.innerWidth < 768) {
-                                    setIsSidebarExpanded(false);
-                                }
-                            }} 
-                            className={`flex items-center p-3 rounded-lg w-full text-left font-medium overflow-hidden transition-all duration-200 ${!isSidebarOpen && 'justify-center'}
-                                ${currentView === 'logs' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
-                            aria-current={currentView === 'logs' ? 'page' : undefined}
-                            aria-label="Ir para logs"
-                        >
-                            <History className="h-6 w-6 shrink-0" />
-                            <span className={`whitespace-nowrap transition-all duration-200 ${isSidebarOpen ? 'ml-3 opacity-100' : 'opacity-0 w-0'}`}>Logs</span>
-                        </button>
-                    </li>
+                    {/* Botão de Logs - Apenas para Administradores */}
+                    {isAdmin && (
+                        <li>
+                            <button 
+                                onClick={() => {
+                                    setCurrentView('logs');
+                                    announce('Navegando para logs');
+                                    // Fechar sidebar em mobile após clicar
+                                    if (window.innerWidth < 768) {
+                                        setIsSidebarExpanded(false);
+                                    }
+                                }} 
+                                className={`flex items-center p-3 rounded-lg w-full text-left font-medium overflow-hidden transition-all duration-200 ${!isSidebarOpen && 'justify-center'}
+                                    ${currentView === 'logs' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
+                                aria-current={currentView === 'logs' ? 'page' : undefined}
+                                aria-label="Ir para logs"
+                            >
+                                <History className="h-6 w-6 shrink-0" />
+                                <span className={`whitespace-nowrap transition-all duration-200 ${isSidebarOpen ? 'ml-3 opacity-100' : 'opacity-0 w-0'}`}>Logs</span>
+                            </button>
+                        </li>
+                    )}
                 </ul>
 
                 <div className="border-t border-gray-200 dark:border-gray-700 p-3 shrink-0 bg-gray-50 dark:bg-gray-900/50">

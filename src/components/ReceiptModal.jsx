@@ -236,7 +236,24 @@ export default function ReceiptModal({ doc, onClose, documentTypes }) {
                 <div class="receipt-copy">
                     <div class="header">
                         <div class="logo-area">
-                            <div class="logo-box"><img src="/src/assets/brasao-glesp.png" alt="GLESP" /></div>
+                            <div class="logo-box">
+                                <div style="
+                                    width: 100%;
+                                    height: 100%;
+                                    background: #1e40af;
+                                    color: white;
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-weight: bold;
+                                    border-radius: 8px;
+                                    font-size: 14px;
+                                ">
+                                    <div style="font-size: 24px; margin-bottom: 4px;">G</div>
+                                    <div style="font-size: 10px; letter-spacing: 1px;">GLESP</div>
+                                </div>
+                            </div>
                         </div>
                         <div class="title">Comprovante de Protocolo</div>
                         <div class="organization">Grande Loja Maçônica do Estado de São Paulo</div>
@@ -300,7 +317,22 @@ export default function ReceiptModal({ doc, onClose, documentTypes }) {
                     <div class="header">
                         <div class="logo-area">
                             <div class="logo-box">
-                                <img src="/src/assets/brasao-glesp.png" alt="GLESP" />
+                                <div style="
+                                    width: 100%;
+                                    height: 100%;
+                                    background: #1e40af;
+                                    color: white;
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-weight: bold;
+                                    border-radius: 8px;
+                                    font-size: 14px;
+                                ">
+                                    <div style="font-size: 24px; margin-bottom: 4px;">G</div>
+                                    <div style="font-size: 10px; letter-spacing: 1px;">GLESP</div>
+                                </div>
                             </div>
                         </div>
                         <div class="title">Comprovante de Protocolo</div>
