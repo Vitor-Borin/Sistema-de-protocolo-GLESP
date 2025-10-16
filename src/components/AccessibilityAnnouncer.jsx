@@ -15,7 +15,7 @@ export const AccessibilityProvider = ({ children }) => {
 
     const announce = (message, priority = 'polite') => {
         const announcement = {
-            id: Date.now(),
+            id: `announce_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             message,
             priority
         };

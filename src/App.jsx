@@ -10,6 +10,24 @@ export default function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [forceRender, setForceRender] = useState(0);
+
+    // Forçar re-renderização global quando o tema muda
+    useEffect(() => {
+        const handleThemeChange = () => {
+            setForceRender(prev => prev + 1);
+            // Forçar re-renderização adicional
+            setTimeout(() => {
+                setForceRender(prev => prev + 1);
+            }, 100);
+        };
+
+        window.addEventListener('themeChanged', handleThemeChange);
+        
+        return () => {
+            window.removeEventListener('themeChanged', handleThemeChange);
+        };
+    }, []);
 
     const handleLogin = (userData) => {
         try {

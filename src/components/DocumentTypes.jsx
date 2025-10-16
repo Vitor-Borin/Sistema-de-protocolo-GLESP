@@ -95,7 +95,7 @@ const DocumentTypes = React.memo(({ initialDocTypes, onSave }) => {
                     </div>
                     <button
                         onClick={handleAdd}
-                        className="flex items-center justify-center w-full sm:w-auto space-x-2 px-6 py-3 border border-transparent text-sm font-medium rounded-lg shadow-lg text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-all duration-200 hover:shadow-xl"
+                        className="flex items-center justify-center w-full sm:w-auto space-x-2 px-6 py-3 border border-transparent text-sm font-medium rounded-full shadow-lg text-white bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 transition-all duration-200 hover:shadow-xl"
                     >
                         <PlusCircle className="h-5 w-5" />
                         <span>Adicionar</span>

@@ -199,14 +199,14 @@ const DocumentModal = React.memo(({ isOpen, onClose, onSave, documentTypes, edit
                         <button 
                             type="button" 
                             onClick={onClose} 
-                            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-[var(--text-secondary)] bg-white dark:bg-[var(--bg-card)] border border-gray-300 dark:border-[var(--border-primary)] rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-[var(--bg-secondary)] dark:bg-[var(--bg-secondary)] h-10"
+                            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 h-10"
                         >
                             Cancelar
                         </button>
                         <button 
                             type="submit" 
                             disabled={isSaving} 
-                            className="inline-flex justify-center items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg shadow-sm hover:bg-blue-700 disabled:bg-blue-300 h-10"
+                            className="inline-flex justify-center items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 border border-transparent rounded-full shadow-lg hover:shadow-xl disabled:bg-gray-400 h-10 transition-all duration-200"
                         >
                             {isSaving ? <Loader className="animate-spin h-5 w-5" /> : 'Salvar'}
                         </button>

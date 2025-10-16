@@ -55,7 +55,6 @@ export default function ReceiptModal({ doc, onClose, documentTypes }) {
                     .logo-box {
                         width: 80px;
                         height: 80px;
-                        border: 2px solid #333;
                         margin: 0 auto 10px;
                         background: white;
                         display: flex;
@@ -140,7 +139,6 @@ export default function ReceiptModal({ doc, onClose, documentTypes }) {
                     .signature-area {
                         margin-top: 30px;
                         padding: 20px;
-                        border: 1px solid #333;
                         background: white;
                         display: flex;
                         justify-content: space-between;
@@ -171,7 +169,6 @@ export default function ReceiptModal({ doc, onClose, documentTypes }) {
                     .signature-right {
                         flex: 1;
                         text-align: center;
-                        border-left: 1px solid #ddd;
                         padding: 10px 0 10px 15px;
                     }
                     
@@ -380,18 +377,18 @@ export default function ReceiptModal({ doc, onClose, documentTypes }) {
     const protocolDate = doc.createdAt ? new Date(doc.createdAt.seconds * 1000).toLocaleString('pt-BR') : 'Data Indisponível';
     
     const DetailRow = ({ label, value }) => (
-        <div className="flex justify-between py-3 border-b border-gray-200 dark:border-[var(--border-primary)]">
+        <div className="flex justify-between py-3 border-b border-gray-200 dark:border-gray-600">
             <span className="text-sm font-medium text-gray-500">{label}:</span>
-            <span className="text-sm text-gray-800 dark:text-[var(--text-primary)] text-right">{value}</span>
+            <span className="text-sm text-gray-800 dark:text-white text-right">{value}</span>
         </div>
     );
 
     const ReceiptCopy = ({ title, subtitle, isSecondCopy = false }) => (
         <div className={`bg-white dark:bg-[var(--bg-card)] receipt-copy ${isSecondCopy ? 'second-copy border-t-2 border-dashed border-gray-400' : ''}`}>
             <div className="p-6">
-                <div className="text-center mb-4 border-b border-gray-200 dark:border-[var(--border-primary)] pb-4">
+                <div className="text-center mb-4 border-b border-gray-200 dark:border-gray-600 pb-4">
                     <GlespLogo className="mx-auto h-16 w-auto" />
-                    <h2 className="mt-3 text-lg font-bold text-gray-800 dark:text-[var(--text-primary)]">{title}</h2>
+                    <h2 className="mt-3 text-lg font-bold text-gray-800 dark:text-white">{title}</h2>
                     <p className="text-xs text-gray-500">Grande Loja Maçônica do Estado de São Paulo</p>
                     <p className="text-xs text-blue-600 font-medium mt-1">{subtitle}</p>
                 </div>
@@ -444,7 +441,7 @@ export default function ReceiptModal({ doc, onClose, documentTypes }) {
                         onClick={printReceipt}
                         className="
                             flex items-center space-x-2 w-full justify-center px-6 py-2.5 text-sm font-medium 
-                            rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                            rounded-full shadow-lg text-white bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 transition-all duration-200 hover:shadow-xl"
                     >
                         <Printer className="h-5 w-5" />
                         <span>Imprimir Comprovantes (2 vias)</span>

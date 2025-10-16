@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Clock, User, FileText, Edit, Trash2, Plus, Settings, Search, Filter, Calendar, X } from 'lucide-react';
 import LogService from '../services/logService';
 
-const LogPage = React.memo(({ logs, onClearLogs }) => {
+const LogPage = React.memo(({ logs, onClearLogs, onDeleteLog }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState('all');
     const [selectedDate, setSelectedDate] = useState('');
@@ -33,7 +33,7 @@ const LogPage = React.memo(({ logs, onClearLogs }) => {
             case 'create': return <Plus className="h-4 w-4 text-green-600 dark:text-green-400" />;
             case 'edit': return <Edit className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
             case 'delete': return <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />;
-            case 'settings': return <Settings className="h-4 w-4 text-purple-600 dark:text-purple-400" />;
+            case 'settings': return <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
             default: return <FileText className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
         }
     };
@@ -44,7 +44,7 @@ const LogPage = React.memo(({ logs, onClearLogs }) => {
             case 'create': return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-400';
             case 'edit': return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-400';
             case 'delete': return 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-400';
-            case 'settings': return 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-400';
+            case 'settings': return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-400';
             default: return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
         }
     };
@@ -67,18 +67,15 @@ const LogPage = React.memo(({ logs, onClearLogs }) => {
         setSelectedDate('');
     };
 
-    // Função para remover logs duplicados
-    const handleRemoveDuplicates = useCallback(() => {
-        try {
-            const removedCount = LogService.removeDuplicateLogs();
-            if (removedCount > 0) {
-                // Recarregar a página para atualizar os logs
-                window.location.reload();
+    const handleDeleteLog = useCallback((logId) => {
+        if (window.confirm('Tem certeza que deseja excluir este log? Esta ação não pode ser desfeita.')) {
+            if (onDeleteLog) {
+                onDeleteLog(logId);
             }
-        } catch (error) {
-            console.error('Erro ao remover duplicatas:', error);
         }
-    }, []);
+    }, [onDeleteLog]);
+
+
 
     return (
         <div className="space-y-6">
@@ -90,24 +87,22 @@ const LogPage = React.memo(({ logs, onClearLogs }) => {
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                             Histórico completo de todas as alterações no sistema
                         </p>
+                        <div className="mt-2 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <p className="text-xs text-amber-800 dark:text-amber-200 font-medium">
+                                🔒 Acesso restrito - Apenas administradores podem visualizar estes logs
+                            </p>
+                        </div>
                     </div>
                     <div className="flex items-center space-x-2">
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                             {filteredLogs.length} de {logs.length} registros
                         </span>
                         {logs.length > 0 && (
-                            <div className="flex items-center space-x-2">
-                                <button
-                                    onClick={onClearLogs}
-                                    className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-all duration-200">
-                                    Limpar Logs
-                                </button>
-                                <button
-                                    onClick={handleRemoveDuplicates}
-                                    className="px-4 py-2 text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-all duration-200">
-                                    Remover Duplicatas
-                                </button>
-                            </div>
+                            <button
+                                onClick={onClearLogs}
+                                className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-all duration-200">
+                                Limpar Logs
+                            </button>
                         )}
                     </div>
                 </div>
@@ -208,7 +203,7 @@ const LogPage = React.memo(({ logs, onClearLogs }) => {
                         {filteredLogs.map((log) => {
                             const { date, time } = formatTimestamp(log.timestamp);
                             return (
-                                <div key={log.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                                <div key={log.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 group">
                                     <div className="flex items-start space-x-4">
                                         {/* Ícone da ação */}
                                         <div className="flex-shrink-0 mt-1">
@@ -229,7 +224,12 @@ const LogPage = React.memo(({ logs, onClearLogs }) => {
                                                 <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                                                     <div className="flex items-center space-x-1">
                                                         <User className="h-4 w-4" />
-                                                        <span>{log.user}</span>
+                                                        <span>
+                                                            {typeof log.user === 'object' 
+                                                                ? log.user.name
+                                                                : log.user
+                                                            }
+                                                        </span>
                                                     </div>
                                                     <div className="flex items-center space-x-1">
                                                         <Clock className="h-4 w-4" />
@@ -244,11 +244,39 @@ const LogPage = React.memo(({ logs, onClearLogs }) => {
                                                 </p>
                                             )}
                                             
+                                            {typeof log.user === 'object' && (log.user.department !== 'N/A' || log.user.role !== 'Usuário') && (
+                                                <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                                                    {log.user.department !== 'N/A' && (
+                                                        <span className="flex items-center space-x-1">
+                                                            <span className="font-medium">Depto:</span>
+                                                            <span>{log.user.department}</span>
+                                                        </span>
+                                                    )}
+                                                    {log.user.role !== 'Usuário' && (
+                                                        <span className="flex items-center space-x-1">
+                                                            <span className="font-medium">Cargo:</span>
+                                                            <span>{log.user.role}</span>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            
                                             {log.documentNumber && (
                                                 <p className="mt-1 text-xs text-blue-600 dark:text-blue-400 font-mono">
                                                     Protocolo: {log.documentNumber}
                                                 </p>
                                             )}
+                                        </div>
+                                        
+                                        {/* Botão de excluir individual */}
+                                        <div className="flex-shrink-0 mt-1">
+                                            <button
+                                                onClick={() => handleDeleteLog(log.id)}
+                                                className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-all duration-200"
+                                                title="Excluir este log"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

@@ -38,7 +38,7 @@ const AuthComponent = React.memo(({ onLogin }) => {
                     <GlespLogo className="mx-auto h-24 w-auto" />
                     <h2 
                         className="
-                            mt-4 text-3xl font-extrabold text-gray-900 dark:text-[var(--text-primary)]"
+                            mt-4 text-3xl font-extrabold text-gray-900 dark:text-white"
                     >
                         GLESP - Sistema de Protocolo
                     </h2>
@@ -60,7 +60,7 @@ const AuthComponent = React.memo(({ onLogin }) => {
                                 required 
                                 className="
                                     appearance-none rounded-none relative block w-full px-3 py-2 
-                                    border border-gray-300 dark:border-[var(--border-primary)] placeholder-gray-500 text-gray-900 dark:text-[var(--text-primary)] rounded-t-md 
+                                    border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-t-md 
                                     focus:z-10 sm:text-sm"
                                 placeholder="Endereço de e-mail" 
                                 value={email} 
@@ -76,7 +76,7 @@ const AuthComponent = React.memo(({ onLogin }) => {
                                 required 
                                 className="
                                     appearance-none rounded-none relative block w-full px-3 py-2 
-                                    border border-gray-300 dark:border-[var(--border-primary)] placeholder-gray-500 text-gray-900 dark:text-[var(--text-primary)] rounded-b-md 
+                                    border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-b-md 
                                     focus:z-10 sm:text-sm"
                                 placeholder="Senha" 
                                 value={password} 
@@ -93,7 +93,7 @@ const AuthComponent = React.memo(({ onLogin }) => {
                             disabled={loading} 
                             className="
                                 group relative w-full flex justify-center py-2 px-4 border border-transparent 
-                                text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 
+                                text-sm font-medium rounded-full text-white bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 shadow-lg hover:shadow-xl transition-all duration-200 
                                 disabled:bg-blue-300"
                         >
                             {loading ? (

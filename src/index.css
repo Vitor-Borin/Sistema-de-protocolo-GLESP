@@ -162,10 +162,10 @@ body {
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1) !important;
 }
 
-.dark .bg-purple-100 {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%) !important;
-  border: 1px solid rgba(168, 85, 247, 0.3) !important;
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.1) !important;
+.dark .bg-blue-100 {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1) !important;
 }
 
 /* Paginação melhorada */
@@ -281,7 +281,7 @@ body {
   background: var(--bg-hover) !important;
 }
 
-.dark .hover\:bg-purple-50:hover {
+.dark .hover\:bg-blue-50:hover {
   background: var(--bg-hover) !important;
 }
 
@@ -289,7 +289,7 @@ body {
   background: var(--bg-hover) !important;
 }
 
-.dark .hover\:bg-indigo-50:hover {
+.dark .hover\:bg-blue-50:hover {
   background: var(--bg-hover) !important;
 }
 

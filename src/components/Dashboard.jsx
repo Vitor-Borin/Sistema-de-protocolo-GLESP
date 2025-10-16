@@ -12,14 +12,37 @@ import StorageService from '../services/storage';
 import LogService from '../services/logService';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAccessibility, SkipLink } from './AccessibilityAnnouncer';
-import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import SimpleConfig from './SimpleConfig';
 
 
 export default function Dashboard({ user, onLogout }) {
     const { isDarkMode, accessibility, toggleDarkMode } = useTheme();
+    const [forceRender, setForceRender] = useState(0);
+
+    // Forçar re-renderização quando o tema muda
+    useEffect(() => {
+        setForceRender(prev => prev + 1);
+    }, [isDarkMode]);
+
+    // Escutar evento customizado de mudança de tema
+    useEffect(() => {
+        const handleThemeChange = () => {
+            setForceRender(prev => prev + 1);
+            // Forçar re-renderização adicional
+            setTimeout(() => {
+                setForceRender(prev => prev + 1);
+            }, 50);
+        };
+
+        window.addEventListener('themeChanged', handleThemeChange);
+        window.addEventListener('resize', handleThemeChange);
+        
+        return () => {
+            window.removeEventListener('themeChanged', handleThemeChange);
+            window.removeEventListener('resize', handleThemeChange);
+        };
+    }, []);
     const { announce } = useAccessibility();
-    const { trapFocus, handleArrowKeys } = useKeyboardNavigation();
     
     // Inicializar com dados do localStorage ou dados mock como fallback
     const [documents, setDocuments] = useState(() => {
@@ -77,15 +100,23 @@ export default function Dashboard({ user, onLogout }) {
         try {
             // Log de login do usuário - APENAS se não existir log recente
             const recentLogs = LogService.getLogs();
-            const hasRecentLogin = recentLogs.some(log => 
-                log.type === 'user' && 
-                log.action === 'Login no sistema' &&
-                log.user === (user?.displayName || user?.email || 'Usuário') &&
-                (Date.now() - new Date(log.timestamp).getTime()) < 10000 // 10 segundos
-            );
+            const currentUserName = user?.displayName || user?.name || user?.email || 'Usuário';
+            const hasRecentLogin = recentLogs.some(log => {
+                const logUserName = typeof log.user === 'object' 
+                    ? log.user.name 
+                    : log.user;
+                const timeDiff = Date.now() - new Date(log.timestamp).getTime();
+                
+                return log.type === 'user' && 
+                       log.action === 'Login no sistema' &&
+                       logUserName === currentUserName &&
+                       timeDiff < 30000; // 30 segundos para ser mais seguro
+            });
             
             if (!hasRecentLogin) {
-                LogService.logUserAction('Login no sistema', user?.displayName || user?.email || 'Usuário', 'Usuário acessou o sistema');
+                LogService.logUserAction('Login no sistema', user, 'Usuário acessou o sistema');
+                // Limpar logs duplicados de login após adicionar novo
+                LogService.removeDuplicateLoginLogs();
                 setLogs(LogService.getLogs());
             }
             
@@ -99,29 +130,34 @@ export default function Dashboard({ user, onLogout }) {
 
 
     const handleSaveDocument = (docData) => {
-        if (editingDoc) {
-            setDocuments(docs => docs.map(d => d.id === editingDoc.id ? { ...editingDoc, ...docData } : d));
-            // Log da edição
-            LogService.logProtocolEdit(editingDoc.docNumber, `Protocolo editado - Loja: ${docData.shopNumber}`);
-        } else {
-            const nextDocNumber = documents.length + 1;
-            const formattedNumber = String(nextDocNumber).padStart(3, '0');
-    
-            const newDoc = {
-                ...docData,
-                id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                docNumber: `GLESP-${new Date().getFullYear()}-${formattedNumber}`,
-                createdAt: { seconds: Math.floor(Date.now() / 1000) },
-                protocolledBy: user.displayName || user.email,
-            };
-            setDocuments(docs => [newDoc, ...docs]);
-            // Log da criação
-            LogService.logProtocolCreate(newDoc.docNumber, `Novo protocolo criado - Loja: ${docData.shopNumber}`);
+        try {
+            if (editingDoc) {
+                setDocuments(docs => docs.map(d => d.id === editingDoc.id ? { ...editingDoc, ...docData } : d));
+                // Log da edição
+                LogService.logProtocolEdit(editingDoc.docNumber, `Protocolo editado - Loja: ${docData.shopNumber}`, user);
+            } else {
+                const nextDocNumber = documents.length + 1;
+                const formattedNumber = String(nextDocNumber).padStart(3, '0');
+        
+                const newDoc = {
+                    ...docData,
+                    id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${Math.floor(Math.random() * 100000)}`,
+                    docNumber: `GLESP-${new Date().getFullYear()}-${formattedNumber}`,
+                    createdAt: { seconds: Math.floor(Date.now() / 1000) },
+                    protocolledBy: user.displayName || user.email,
+                };
+                setDocuments(docs => [newDoc, ...docs]);
+                // Log da criação
+                LogService.logProtocolCreate(newDoc.docNumber, `Novo protocolo criado - Loja: ${docData.shopNumber}`, user);
+            }
+            setEditingDoc(null);
+            setIsDocModalOpen(false);
+            // Atualizar logs
+            setLogs(LogService.getLogs());
+        } catch (error) {
+            console.error('Erro ao salvar documento:', error);
+            alert('Erro ao salvar o protocolo. Tente novamente.');
         }
-        setEditingDoc(null);
-        setIsDocModalOpen(false);
-        // Atualizar logs
-        setLogs(LogService.getLogs());
     };
 
     const handleDeleteDocument = (docId) => {
@@ -131,7 +167,7 @@ export default function Dashboard({ user, onLogout }) {
         
         // Log da exclusão
         if (docToDelete) {
-            LogService.logProtocolDelete(docToDelete.docNumber, `Protocolo excluído - Loja: ${docToDelete.shopNumber}`);
+            LogService.logProtocolDelete(docToDelete.docNumber, `Protocolo excluído - Loja: ${docToDelete.shopNumber}`, user);
             setLogs(LogService.getLogs());
         }
     };
@@ -151,7 +187,7 @@ export default function Dashboard({ user, onLogout }) {
     const handleSaveDocTypes = (newTypes) => {
         setDocumentTypes(newTypes);
         // Log da alteração de configurações
-        LogService.logSettingsChange('Tipos de documento atualizados', `Total de tipos: ${newTypes.length}`);
+        LogService.logSettingsChange('Tipos de documento atualizados', `Total de tipos: ${newTypes.length}`, user);
         setLogs(LogService.getLogs());
     };
 
@@ -162,21 +198,44 @@ export default function Dashboard({ user, onLogout }) {
         }
     };
 
+    const handleDeleteLog = (logId) => {
+        if (LogService.deleteLog(logId)) {
+            setLogs(LogService.getLogs());
+        }
+    };
+
 
     // Otimizado com useMemo para evitar recalcular a cada render
     const filteredDocuments = useMemo(() => {
         if (!searchQuery) return documents;
-        const searchLower = searchQuery.toLowerCase();
-        return documents.filter(doc => doc.shopNumber.toString().includes(searchLower));
+        
+        // Dividir a busca por vírgulas e remover espaços
+        const searchTerms = searchQuery.split(',').map(term => term.trim());
+        
+        return documents.filter(doc => {
+            const shopNumber = doc.shopNumber.toString();
+            // Verificar se o número da loja está em qualquer um dos termos de busca
+            return searchTerms.some(term => shopNumber.includes(term));
+        });
     }, [documents, searchQuery]);
 
     // Lógica de paginação otimizada
-    const { totalPages, currentDocuments } = useMemo(() => {
+    const { totalPages, currentDocuments, startIndex, endIndex } = useMemo(() => {
         const total = Math.ceil(filteredDocuments.length / itemsPerPage);
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const current = filteredDocuments.slice(startIndex, endIndex);
-        return { totalPages: total, currentDocuments: current };
+        const startIdx = (currentPage - 1) * itemsPerPage;
+        const endIdx = startIdx + itemsPerPage;
+        const current = filteredDocuments.slice(startIdx, endIdx);
+        
+        // Proteção contra páginas inválidas
+        const safeTotalPages = Math.max(1, total);
+        const safeCurrentPage = Math.min(currentPage, safeTotalPages);
+        
+        return { 
+            totalPages: safeTotalPages, 
+            currentDocuments: current,
+            startIndex: startIdx,
+            endIndex: endIdx
+        };
     }, [filteredDocuments, currentPage, itemsPerPage]);
 
     // Reset página quando pesquisar (otimizado com useCallback)
@@ -184,6 +243,14 @@ export default function Dashboard({ user, onLogout }) {
         setSearchQuery(query);
         setCurrentPage(1);
     }, []);
+
+    // Corrigir página atual se necessário
+    useEffect(() => {
+        const total = Math.ceil(filteredDocuments.length / itemsPerPage);
+        if (currentPage > total && total > 0) {
+            setCurrentPage(total);
+        }
+    }, [filteredDocuments.length, currentPage, itemsPerPage]);
 
     // Protocolos de hoje otimizado
     const protocolsToday = useMemo(() => {
@@ -215,7 +282,7 @@ export default function Dashboard({ user, onLogout }) {
             case 'config':
                 return <SimpleConfig user={user} />;
             case 'logs':
-                return <LogPage logs={logs} onClearLogs={handleClearLogs} />;
+                return <LogPage logs={logs} onClearLogs={handleClearLogs} onDeleteLog={handleDeleteLog} />;
             case 'list':
             default:
                 return (
@@ -240,13 +307,13 @@ export default function Dashboard({ user, onLogout }) {
                                     <p className="text-3xl font-bold text-gray-800 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-300">{protocolsToday}</p>
                                 </div>
                             </div>
-                            <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex items-center space-x-6 transition-all duration-500 hover:shadow-2xl hover:scale-105 hover:border-purple-400 dark:hover:border-purple-500 dark:hover:bg-gray-800 group backdrop-blur-sm">
-                                <div className="bg-purple-100 dark:bg-purple-900/40 p-4 rounded-2xl border border-purple-200 dark:border-purple-700 group-hover:scale-110 transition-transform duration-300">
-                                    <SettingsIcon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                            <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex items-center space-x-6 transition-all duration-500 hover:shadow-2xl hover:scale-105 hover:border-blue-400 dark:hover:border-blue-500 dark:hover:bg-gray-800 group backdrop-blur-sm">
+                                <div className="bg-blue-100 dark:bg-blue-900/40 p-4 rounded-2xl border border-blue-200 dark:border-blue-700 group-hover:scale-110 transition-transform duration-300">
+                                    <SettingsIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500 dark:text-gray-300 font-medium">Tipos de Documentos Cadastrados</p>
-                                    <p className="text-3xl font-bold text-gray-800 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300">{documentTypes.length}</p>
+                                    <p className="text-3xl font-bold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">{documentTypes.length}</p>
                                 </div>
                             </div>
                         </div>
@@ -257,7 +324,7 @@ export default function Dashboard({ user, onLogout }) {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder="Buscar protocolos por N° de Loja..."
+                                    placeholder="Buscar por N° de Loja (ex: 700, 70, 15)..."
                                     value={searchQuery}
                                     onChange={(e) => handleSearch(e.target.value)}
                                     className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
@@ -347,14 +414,14 @@ export default function Dashboard({ user, onLogout }) {
                                                     
                                                     if (!shouldShow) {
                                                         if (pageNumber === currentPage - 2 || pageNumber === currentPage + 2) {
-                                                            return <span key={pageNumber} className="px-2 text-gray-400 dark:text-slate-500">...</span>;
+                                                            return <span key={`ellipsis_${pageNumber}`} className="px-2 text-gray-400 dark:text-slate-500">...</span>;
                                                         }
                                                         return null;
                                                     }
                                                     
                                                     return (
                                                         <button
-                                                            key={pageNumber}
+                                                            key={`page_${pageNumber}`}
                                                             onClick={() => setCurrentPage(pageNumber)}
                                                             className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
                                                                 isCurrentPage
@@ -395,7 +462,7 @@ export default function Dashboard({ user, onLogout }) {
                     </h2>
                     <button
                         onClick={onLogout}
-                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        className="px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 text-white rounded-full transition-all duration-200 shadow-lg hover:shadow-xl">
                         Voltar ao Login
                     </button>
                 </div>
@@ -581,13 +648,13 @@ export default function Dashboard({ user, onLogout }) {
                                    <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                    <div className="text-left">
                                        <p className="text-xs text-gray-500 dark:text-gray-400">Bem-vindo</p>
-                                       <p className="text-sm font-semibold text-gray-900 dark:text-white">{user?.displayName || user?.email?.split('@')[0] || 'Usuário'}</p>
+                                       <p className="text-sm font-bold text-gray-900 dark:text-white">{user?.displayName || user?.email?.split('@')[0] || 'Usuário'}</p>
                                    </div>
                                </div>
 
                                {/* Data e Hora Atual */}
                                <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
-                                   <Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                                   <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                    <div className="text-left">
                                        <p className="text-xs text-gray-500 dark:text-gray-400">Hoje</p>
                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -602,15 +669,15 @@ export default function Dashboard({ user, onLogout }) {
                                        toggleDarkMode();
                                        announce(isDarkMode ? 'Modo claro ativado' : 'Modo noturno ativado');
                                    }}
-                                   className="group relative flex items-center justify-center p-3 rounded-xl shadow-lg border-2 transition-all duration-300 hover:scale-110 hover:shadow-xl backdrop-blur-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500"
+                                   className="group relative flex items-center justify-center p-3 rounded-xl shadow-lg border-2 transition-all duration-300 hover:scale-110 hover:shadow-xl bg-white dark:bg-gray-800 border-gray-400 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 ring-2 ring-gray-200 dark:ring-gray-700"
                                    aria-label={isDarkMode ? 'Ativar modo claro' : 'Ativar modo noturno'}
                                    title={isDarkMode ? 'Ativar modo claro' : 'Ativar modo noturno'}
                                >
                                    <div className="relative w-5 h-5">
                                        {isDarkMode ? (
-                                           <Sun className="h-5 w-5 text-yellow-500 transition-transform duration-500" />
-                                       ) : (
                                            <Moon className="h-5 w-5 text-blue-600 transition-transform duration-500" />
+                                       ) : (
+                                           <Sun className="h-5 w-5 text-yellow-500 transition-transform duration-500" />
                                        )}
                                    </div>
                                    {/* Tooltip */}
