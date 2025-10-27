@@ -22,16 +22,61 @@ class ProtocolService {
   // Criar protocolo
   static async createProtocol(protocolData, userId) {
     try {
+      // Gerar número sequencial do protocolo
+      const protocolNumber = await this.generateNextProtocolNumber();
+      
       const docRef = await addDoc(collection(db, this.COLLECTION), {
         ...protocolData,
+        numero_protocolo: protocolNumber,
         criado_por: userId,
         criado_em: serverTimestamp(),
         status: 'ativo'
       });
       return docRef.id;
     } catch (error) {
-      console.error('Erro ao criar protocolo:', error);
+      // Erro silencioso para otimização
       throw error;
+    }
+  }
+
+  // Gerar próximo número de protocolo sequencial
+  static async generateNextProtocolNumber() {
+    try {
+      const currentYear = new Date().getFullYear();
+      const yearPrefix = `GLESP-${currentYear}`;
+      
+      // Buscar o último protocolo do ano atual
+      const q = query(
+        collection(db, this.COLLECTION),
+        where('numero_protocolo', '>=', yearPrefix),
+        where('numero_protocolo', '<', `GLESP-${currentYear + 1}`),
+        orderBy('numero_protocolo', 'desc'),
+        limit(1)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        // Primeiro protocolo do ano
+        return `${yearPrefix}-001`;
+      }
+      
+      // Extrair o número do último protocolo
+      const lastProtocol = querySnapshot.docs[0].data();
+      const lastNumber = lastProtocol.numero_protocolo;
+      const lastSequence = parseInt(lastNumber.split('-')[2]) || 0;
+      
+      // Gerar próximo número sequencial
+      const nextSequence = lastSequence + 1;
+      const paddedSequence = String(nextSequence).padStart(3, '0');
+      
+      return `${yearPrefix}-${paddedSequence}`;
+      
+    } catch (error) {
+      // Erro silencioso para otimização
+      // Fallback: usar timestamp
+      const timestamp = Date.now().toString().slice(-6);
+      return `GLESP-${new Date().getFullYear()}-${timestamp}`;
     }
   }
 
@@ -52,7 +97,7 @@ class ProtocolService {
         ...doc.data()
       }));
     } catch (error) {
-      console.error('Erro ao buscar protocolos:', error);
+      // Erro silencioso para otimização
       throw error;
     }
   }
@@ -79,7 +124,7 @@ class ProtocolService {
         lastDoc: querySnapshot.docs[querySnapshot.docs.length - 1]
       };
     } catch (error) {
-      console.error('Erro ao buscar protocolos:', error);
+      // Erro silencioso para otimização
       throw error;
     }
   }
@@ -98,7 +143,7 @@ class ProtocolService {
       }
       return null;
     } catch (error) {
-      console.error('Erro ao buscar protocolo:', error);
+      // Erro silencioso para otimização
       throw error;
     }
   }
@@ -114,7 +159,7 @@ class ProtocolService {
       });
       return true;
     } catch (error) {
-      console.error('Erro ao atualizar protocolo:', error);
+      // Erro silencioso para otimização
       throw error;
     }
   }
@@ -130,7 +175,19 @@ class ProtocolService {
       });
       return true;
     } catch (error) {
-      console.error('Erro ao arquivar protocolo:', error);
+      // Erro silencioso para otimização
+      throw error;
+    }
+  }
+
+  // Deletar protocolo permanentemente
+  static async deleteProtocol(protocolId) {
+    try {
+      const protocolRef = doc(db, this.COLLECTION, protocolId);
+      await deleteDoc(protocolRef);
+      return true;
+    } catch (error) {
+      // Erro silencioso para otimização
       throw error;
     }
   }
@@ -161,7 +218,7 @@ class ProtocolService {
         arquivados: protocols.filter(p => p.status === 'arquivado').length
       };
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
+      // Erro silencioso para otimização
       throw error;
     }
   }

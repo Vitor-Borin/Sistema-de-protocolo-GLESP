@@ -6,13 +6,13 @@ import { getStorage } from 'firebase/storage';
 
 // Configuração do Firebase - GLESP
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyCvfXjnsfAzjteqXUosZL8pHAvW-F5ZpHo",
+  authDomain: "sistema-de-protocolo-glesp.firebaseapp.com",
+  projectId: "sistema-de-protocolo-glesp",
+  storageBucket: "sistema-de-protocolo-glesp.firebasestorage.app",
+  messagingSenderId: "1055636360295",
+  appId: "1:1055636360295:web:ad0e6d8fa181a19e2958c2",
+  measurementId: "G-5J8ZLP1JV3"
 };
 
 // Inicializar Firebase

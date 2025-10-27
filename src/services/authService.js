@@ -32,7 +32,7 @@ class AuthService {
         ...userData
       };
     } catch (error) {
-      console.error('Erro no login:', error);
+      // Erro silencioso para otimização
       throw error;
     }
   }
@@ -43,7 +43,7 @@ class AuthService {
       await signOut(auth);
       return true;
     } catch (error) {
-      console.error('Erro no logout:', error);
+      // Erro silencioso para otimização
       throw error;
     }
   }

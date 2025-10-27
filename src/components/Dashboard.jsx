@@ -6,17 +6,21 @@ import ReceiptModal from './ReceiptModal';
 import DocumentDetail from './DocumentDetail';
 import Settings from './Settings';
 import LogPage from './LogPage';
-import { LogOut, PlusCircle, Search, Settings as SettingsIcon, Home, Clock, FileText, User, Menu, X, ChevronLeft, ChevronRight, History, FileType, Cog, Sun, Moon } from 'lucide-react';
+import AllProtocolsPage from './AllProtocolsPage';
+import { LogOut, PlusCircle, Search, Settings as SettingsIcon, Home, Clock, FileText, User, Menu, X, ChevronLeft, ChevronRight, History, FileType, Cog, Sun, Moon, List } from 'lucide-react';
 import { PREDEFINED_DOC_TYPES, MOCK_DOCUMENTS } from '../data/predefinedData'; // <-- DADOS FALLBACK
 import StorageService from '../services/storage';
 import LogService from '../services/logService';
+import ProtocolService from '../services/protocolService';
 import { useTheme } from '../contexts/ThemeContext';
+import { useToast } from '../contexts/ToastContext';
 import { useAccessibility, SkipLink } from './AccessibilityAnnouncer';
 import SimpleConfig from './SimpleConfig';
 
 
 export default function Dashboard({ user, onLogout }) {
     const { isDarkMode, accessibility, toggleDarkMode } = useTheme();
+    const { showSuccess, showError, showWarning } = useToast();
     const [forceRender, setForceRender] = useState(0);
 
     // Forçar re-renderização quando o tema muda
@@ -44,11 +48,9 @@ export default function Dashboard({ user, onLogout }) {
     }, []);
     const { announce } = useAccessibility();
     
-    // Inicializar com dados do localStorage ou dados mock como fallback
-    const [documents, setDocuments] = useState(() => {
-        const savedDocuments = StorageService.loadDocuments();
-        return savedDocuments.length > 0 ? savedDocuments : MOCK_DOCUMENTS;
-    });
+    // Inicializar com dados do Firestore
+    const [documents, setDocuments] = useState([]);
+    const [loadingDocuments, setLoadingDocuments] = useState(true);
     
     const [documentTypes, setDocumentTypes] = useState(() => {
         const savedDocTypes = StorageService.loadDocumentTypes();
@@ -57,7 +59,7 @@ export default function Dashboard({ user, onLogout }) {
     
     const [searchQuery, setSearchQuery] = useState('');
     
-    const [currentView, setCurrentView] = useState('list'); // 'list', 'detail', 'settings', 'logs', 'config'
+    const [currentView, setCurrentView] = useState('list'); // 'list', 'detail', 'settings', 'logs', 'config', 'allProtocols'
     
     // Verificar se usuário é administrador
     const isAdmin = user?.role === 'admin';
@@ -81,15 +83,7 @@ export default function Dashboard({ user, onLogout }) {
 
     const isSidebarOpen = isSidebarExpanded || isSidebarPinned;
 
-    // Auto-save otimizado: Salvar com debounce para evitar travamentos
-    useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            StorageService.saveDocuments(documents);
-        }, 500); // Aguarda 500ms antes de salvar
-        
-        return () => clearTimeout(timeoutId);
-    }, [documents]);
-
+    // DocumentTypes ainda salvos no localStorage (configurações locais)
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             StorageService.saveDocumentTypes(documentTypes);
@@ -97,6 +91,76 @@ export default function Dashboard({ user, onLogout }) {
         
         return () => clearTimeout(timeoutId);
     }, [documentTypes]);
+
+    // Carregar protocolos do Firestore
+    useEffect(() => {
+        const loadProtocols = async () => {
+            try {
+                setLoadingDocuments(true);
+                // Carregando protocolos do Firestore
+                const result = await ProtocolService.getAllProtocols(100); // Carregar até 100 protocolos
+                // Protocolos carregados
+                
+                // Mapear protocolos do Firestore para o formato da interface
+                const validProtocols = result.protocols.map(protocol => {
+                    // Logs removidos para otimização
+                    
+                    // Sempre garantir que createdAt existe e tem o formato correto
+                    let createdAt = { seconds: Math.floor(Date.now() / 1000) }; // Default
+                    
+                    if (protocol.criado_em) {
+                        // Se é um Timestamp do Firestore, converter para o formato esperado
+                        if (protocol.criado_em.toDate && typeof protocol.criado_em.toDate === 'function') {
+                            try {
+                                const date = protocol.criado_em.toDate();
+                                createdAt = { seconds: Math.floor(date.getTime() / 1000) };
+                            } catch (error) {
+                                // Erro silencioso para otimização
+                                createdAt = { seconds: Math.floor(Date.now() / 1000) };
+                            }
+                        }
+                        // Se já tem seconds, usar diretamente
+                        else if (protocol.criado_em.seconds !== undefined) {
+                            createdAt = { seconds: protocol.criado_em.seconds };
+                        }
+                        // Se é um objeto Date
+                        else if (protocol.criado_em instanceof Date) {
+                            createdAt = { seconds: Math.floor(protocol.criado_em.getTime() / 1000) };
+                        }
+                    }
+                    
+                    // Mapear campos do Firestore para o formato da interface
+                    const mappedProtocol = {
+                        id: protocol.id,
+                        docNumber: protocol.numero_protocolo || `GLESP-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
+                        shopNumber: protocol.numero_loja || '',
+                        deliveredBy: protocol.entregue_por || '',
+                        quantity: protocol.quantidade || 0,
+                        typeId: protocol.tipo_documento || '',
+                        observations: protocol.observacoes || '',
+                        protocolledBy: protocol.criado_por_nome || protocol.criado_por || 'Sistema', // Usar nome do usuário se disponível
+                        createdAt: createdAt
+                    };
+                    
+                    // Log removido para otimização
+                    return mappedProtocol;
+                });
+                
+                setDocuments(validProtocols);
+                // Protocolos processados
+            } catch (error) {
+                // Erro silencioso para otimização
+                // Fallback para dados mock em caso de erro
+                setDocuments(MOCK_DOCUMENTS);
+            } finally {
+                setLoadingDocuments(false);
+            }
+        };
+
+        if (user?.uid) {
+            loadProtocols();
+        }
+    }, [user?.uid]);
 
     // Log inicial para verificar persistência - APENAS UMA VEZ
     useEffect(() => {
@@ -132,46 +196,119 @@ export default function Dashboard({ user, onLogout }) {
     }, [user?.id]); // Usar apenas ID do usuário para evitar loops
 
 
-    const handleSaveDocument = (docData) => {
+    const handleSaveDocument = async (docData) => {
         try {
+            console.log('Iniciando criação de protocolo:', docData);
+            
             if (editingDoc) {
-                setDocuments(docs => docs.map(d => d.id === editingDoc.id ? { ...editingDoc, ...docData } : d));
+                // Editar protocolo existente
+                await ProtocolService.updateProtocol(editingDoc.id, {
+                    ...docData,
+                    numero_loja: docData.shopNumber,
+                    entregue_por: docData.deliveredBy,
+                    quantidade: docData.quantity,
+                    tipo_documento: docData.typeId,
+                    observacoes: docData.observations || ''
+                }, user.uid);
+                
+                // Atualizar lista local
+                setDocuments(docs => docs.map(d => d.id === editingDoc.id ? { ...d, ...docData } : d));
+                
                 // Log da edição
                 LogService.logProtocolEdit(editingDoc.docNumber, `Protocolo editado - Loja: ${docData.shopNumber}`, user);
             } else {
-                const nextDocNumber = documents.length + 1;
-                const formattedNumber = String(nextDocNumber).padStart(3, '0');
-        
-                const newDoc = {
-                    ...docData,
-                    id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${Math.floor(Math.random() * 100000)}`,
-                    docNumber: `GLESP-${new Date().getFullYear()}-${formattedNumber}`,
-                    createdAt: { seconds: Math.floor(Date.now() / 1000) },
-                    protocolledBy: user.displayName || user.email,
+                // Criar novo protocolo
+                const protocolData = {
+                    numero_loja: docData.shopNumber,
+                    entregue_por: docData.deliveredBy,
+                    quantidade: docData.quantity,
+                    tipo_documento: docData.typeId,
+                    observacoes: docData.observations || '',
+                    status: 'ativo',
+                    criado_por_nome: user.displayName || user.name || user.email || 'Usuário' // Salvar nome do usuário
                 };
+                
+                console.log('Criando protocolo no Firestore:', protocolData);
+                const protocolId = await ProtocolService.createProtocol(protocolData, user.uid);
+                console.log('Protocolo criado com ID:', protocolId);
+                
+                // Buscar o protocolo criado para obter o número gerado
+                const createdProtocol = await ProtocolService.getProtocolById(protocolId);
+                console.log('Protocolo criado:', createdProtocol);
+                
+                // Adicionar à lista local
+                const newDoc = {
+                    id: protocolId,
+                    docNumber: createdProtocol.numero_protocolo, // Usar o número gerado automaticamente
+                    shopNumber: docData.shopNumber,
+                    deliveredBy: docData.deliveredBy,
+                    quantity: docData.quantity,
+                    typeId: docData.typeId,
+                    observations: docData.observations || '',
+                    protocolledBy: user.displayName || user.name || user.email || 'Usuário',
+                    createdAt: { seconds: Math.floor(Date.now() / 1000) } // Usar formato compatível com Firestore
+                };
+                
                 setDocuments(docs => [newDoc, ...docs]);
+                
                 // Log da criação
                 LogService.logProtocolCreate(newDoc.docNumber, `Novo protocolo criado - Loja: ${docData.shopNumber}`, user);
+                
+                // Notificação de sucesso
+                showSuccess('Protocolo criado!', `Protocolo ${newDoc.docNumber} criado com sucesso.`);
             }
+            
             setEditingDoc(null);
             setIsDocModalOpen(false);
             // Atualizar logs
             setLogs(LogService.getLogs());
+            announce('Protocolo salvo com sucesso');
+            
+            // Se estivermos na página de todos os protocolos, manter lá
+            if (currentView === 'allProtocols') {
+                // Não mudar a view, manter na página atual
+            }
         } catch (error) {
             console.error('Erro ao salvar documento:', error);
-            alert('Erro ao salvar o protocolo. Tente novamente.');
+            showError('Erro ao salvar', 'Não foi possível salvar o protocolo. Tente novamente.');
         }
     };
 
-    const handleDeleteDocument = (docId) => {
-        const docToDelete = documents.find(d => d.id === docId);
-        setDocuments(docs => docs.filter(d => d.id !== docId));
-        setCurrentView('list'); // Volta para a lista após deletar
-        
-        // Log da exclusão
-        if (docToDelete) {
-            LogService.logProtocolDelete(docToDelete.docNumber, `Protocolo excluído - Loja: ${docToDelete.shopNumber}`, user);
+    const handleDeleteDocument = async (docId, keepCurrentView = false) => {
+        try {
+            const docToDelete = documents.find(d => d.id === docId);
+            
+            if (!docToDelete) {
+                showError('Erro', 'Protocolo não encontrado.');
+                return;
+            }
+
+            // Confirmar exclusão
+            if (!window.confirm(`Tem certeza que deseja excluir o protocolo ${docToDelete.docNumber}? Esta ação não pode ser desfeita.`)) {
+                return;
+            }
+
+            // Deletar do Firestore
+            await ProtocolService.deleteProtocol(docId);
+            
+            // Remover da lista local
+            setDocuments(docs => docs.filter(d => d.id !== docId));
+            
+            if (!keepCurrentView) {
+                setCurrentView('list'); // Volta para a lista após deletar
+            }
+            
+            // Log da exclusão
+            LogService.logProtocolDelete(docToDelete.docNumber, `Protocolo excluído permanentemente - Loja: ${docToDelete.shopNumber}`, user);
             setLogs(LogService.getLogs());
+            
+            // Notificação de exclusão
+            showWarning('Protocolo excluído', `Protocolo ${docToDelete.docNumber} foi excluído permanentemente.`);
+            announce('Protocolo excluído permanentemente');
+            
+        } catch (error) {
+            console.error('Erro ao deletar protocolo:', error);
+            showError('Erro ao excluir', 'Não foi possível excluir o protocolo. Tente novamente.');
         }
     };
 
@@ -181,10 +318,12 @@ export default function Dashboard({ user, onLogout }) {
         setCurrentView('detail');
     };
 
-    const openEditModal = (doc) => {
+    const openEditModal = (doc, keepCurrentView = false) => {
         setEditingDoc(doc);
         setIsDocModalOpen(true);
-        setCurrentView('list'); // Volta para a lista quando abrir o modal de edição
+        if (!keepCurrentView) {
+            setCurrentView('list'); // Volta para a lista quando abrir o modal de edição
+        }
     };
 
     const handleSaveDocTypes = (newTypes) => {
@@ -208,19 +347,52 @@ export default function Dashboard({ user, onLogout }) {
     };
 
 
-    // Otimizado com useMemo para evitar recalcular a cada render
+    // Filtrar documentos de hoje para a tela principal
+    const todayDocuments = useMemo(() => {
+        try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            return documents.filter(doc => {
+                try {
+                    if (!doc.createdAt || typeof doc.createdAt !== 'object') {
+                        return false;
+                    }
+                    
+                    if (doc.createdAt.seconds !== undefined) {
+                        const docDate = new Date(doc.createdAt.seconds * 1000);
+                        docDate.setHours(0, 0, 0, 0);
+                        return docDate.getTime() === today.getTime();
+                    }
+                    
+                    return false;
+                } catch (error) {
+                    console.error('Erro ao filtrar documento:', error);
+                    return false;
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao filtrar documentos de hoje:', error);
+            return [];
+        }
+    }, [documents]);
+
+    // Filtrar documentos
     const filteredDocuments = useMemo(() => {
-        if (!searchQuery) return documents;
+        // Usar documentos de hoje para a lista principal
+        const baseDocuments = todayDocuments;
+        
+        if (!searchQuery) return baseDocuments;
         
         // Dividir a busca por vírgulas e remover espaços
         const searchTerms = searchQuery.split(',').map(term => term.trim());
         
-        return documents.filter(doc => {
+        return baseDocuments.filter(doc => {
             const shopNumber = doc.shopNumber.toString();
             // Verificar se o número da loja está em qualquer um dos termos de busca
             return searchTerms.some(term => shopNumber.includes(term));
         });
-    }, [documents, searchQuery]);
+    }, [todayDocuments, searchQuery]);
 
     // Lógica de paginação otimizada
     const { totalPages, currentDocuments, startIndex, endIndex } = useMemo(() => {
@@ -255,15 +427,47 @@ export default function Dashboard({ user, onLogout }) {
         }
     }, [filteredDocuments.length, currentPage, itemsPerPage]);
 
-    // Protocolos de hoje otimizado
+    // Protocolos de hoje - com proteção robusta
     const protocolsToday = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return documents.filter(doc => {
-            const docDate = new Date(doc.createdAt.seconds * 1000);
-            docDate.setHours(0, 0, 0, 0);
-            return docDate.getTime() === today.getTime();
-        }).length;
+        try {
+            console.log('Calculando protocolsToday...');
+            console.log('Documents:', documents);
+            
+            if (!documents || documents.length === 0) {
+                return 0;
+            }
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const todayCount = documents.filter(doc => {
+                try {
+                    // Verificar se doc.createdAt existe e tem seconds
+                    if (!doc.createdAt || typeof doc.createdAt !== 'object') {
+                        return false;
+                    }
+                    
+                    // Se tem seconds, usar diretamente
+                    if (doc.createdAt.seconds !== undefined) {
+                        const docDate = new Date(doc.createdAt.seconds * 1000);
+                        docDate.setHours(0, 0, 0, 0);
+                        return docDate.getTime() === today.getTime();
+                    }
+                    
+                    return false;
+                } catch (error) {
+                    console.error('Erro ao processar documento para protocolsToday:', error, doc);
+                    return false;
+                }
+            }).length;
+            
+            console.log('Protocolos de hoje calculados:', todayCount);
+            return todayCount;
+            
+        } catch (error) {
+            console.error('Erro ao calcular protocolsToday:', error);
+            return 0;
+        }
     }, [documents]);
 
 
@@ -279,6 +483,22 @@ export default function Dashboard({ user, onLogout }) {
                             onDelete={handleDeleteDocument}
                             onEdit={openEditModal}
                             onPrint={() => setIsReceiptModalOpen(selectedDoc)}
+                        />;
+            case 'allProtocols':
+                return <AllProtocolsPage 
+                            user={user}
+                            documentTypes={documentTypes}
+                            onBack={() => setCurrentView('list')}
+                            onEdit={(protocol) => {
+                                openEditModal(protocol, true); // Manter na página atual
+                            }}
+                            onDelete={(protocolId) => {
+                                handleDeleteDocument(protocolId, true); // Manter na página atual
+                            }}
+                            onView={(protocol) => {
+                                setSelectedDoc(protocol);
+                                setCurrentView('detail');
+                            }}
                         />;
             case 'settings':
                 return <Settings documentTypes={documentTypes} onSave={handleSaveDocTypes} />;
@@ -374,9 +594,35 @@ export default function Dashboard({ user, onLogout }) {
                         {/* Lista de Documentos */}
                         <div className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden backdrop-blur-sm">
                             <div className="p-8 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r  dark:from-gray-800 dark:to-gray-700">
-                                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Lista de Protocolos</h3>
+                                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Lista de Protocolos de Hoje</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Protocolos criados em {new Date().toLocaleDateString('pt-BR')}</p>
                             </div>
                             <div>
+                                {currentDocuments.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-12 px-4">
+                                        <Clock className="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" />
+                                        <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                                            Nenhum protocolo criado hoje
+                                        </h4>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+                                            {searchQuery 
+                                                ? 'Nenhum protocolo encontrado com esse número de loja hoje.' 
+                                                : 'Clique em "Novo Protocolo" para criar o primeiro protocolo do dia.'}
+                                        </p>
+                                        {!searchQuery && (
+                                            <button 
+                                                onClick={() => { 
+                                                    setEditingDoc(null); 
+                                                    setIsDocModalOpen(true);
+                                                }} 
+                                                className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                                            >
+                                                <PlusCircle className="h-5 w-5" />
+                                                <span>Criar Primeiro Protocolo</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
                                 <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
                                 {currentDocuments.map((doc) => {
                                     const docType = documentTypes.find(t => t.id === doc.typeId);
@@ -396,7 +642,7 @@ export default function Dashboard({ user, onLogout }) {
                                                     announce(`Selecionado protocolo ${doc.docNumber}`);
                                                 }
                                             }}
-                                            aria-label={`Protocolo ${doc.docNumber} - ${docType ? docType.name : "Tipo Desconhecido"} - Data: ${new Date(doc.createdAt.seconds * 1000).toLocaleDateString('pt-BR')}`}
+                                            aria-label={`Protocolo ${doc.docNumber} - ${docType ? docType.name : "Tipo Desconhecido"}`}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div className="truncate flex-1">
@@ -404,17 +650,18 @@ export default function Dashboard({ user, onLogout }) {
                                                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{doc.docNumber}</p>
                                                 </div>
                                                 <div className="ml-4 flex-shrink-0">
-                                                    <p className="text-sm text-gray-500 dark:text-gray-400 text-right font-medium">{new Date(doc.createdAt.seconds * 1000).toLocaleDateString('pt-BR')}</p>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400 text-right font-medium">Hoje</p>
                                                 </div>
                                             </div>
                                         </li>
                                     );
                                 })}
                                 </ul>
+                                )}
                             </div>
                             
                             {/* Paginação */}
-                            {totalPages > 1 && (
+                            {totalPages > 1 && currentDocuments.length > 0 && (
                                 <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-600 shrink-0 bg-gray-50 dark:bg-slate-700">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center text-sm text-gray-500 dark:text-slate-300">
@@ -558,6 +805,25 @@ export default function Dashboard({ user, onLogout }) {
                     <li>
                         <button 
                             onClick={() => {
+                                setCurrentView('allProtocols');
+                                announce('Navegando para todos os protocolos');
+                                // Fechar sidebar em mobile após clicar
+                                if (window.innerWidth < 768) {
+                                    setIsSidebarExpanded(false);
+                                }
+                            }} 
+                            className={`flex items-center p-3 rounded-lg w-full text-left font-medium overflow-hidden transition-all duration-200 ${!isSidebarOpen && 'justify-center'}
+                                ${currentView === 'allProtocols' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
+                            aria-current={currentView === 'allProtocols' ? 'page' : undefined}
+                            aria-label="Ir para todos os protocolos"
+                        >
+                            <List className="h-6 w-6 shrink-0" />
+                            <span className={`whitespace-nowrap transition-all duration-200 ${isSidebarOpen ? 'ml-3 opacity-100' : 'opacity-0 w-0'}`}>Todos os Protocolos</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button 
+                            onClick={() => {
                                 setCurrentView('settings');
                                 announce('Navegando para tipos de documento');
                                 // Fechar sidebar em mobile após clicar
@@ -653,12 +919,16 @@ export default function Dashboard({ user, onLogout }) {
                                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                                    {currentView === 'list' && 'Painel de Protocolos'}
                                    {currentView === 'detail' && 'Detalhes do Protocolo'}
+                                   {currentView === 'allProtocols' && 'Todos os Protocolos'}
                                    {currentView === 'settings' && 'Tipos de Documento'}
                                    {currentView === 'config' && 'Configurações'}
                                    {currentView === 'logs' && 'Log de Atividades'}
                                </h1>
                                {currentView === 'list' && (
                                     <p className="text-base text-gray-600 dark:text-gray-300">Gerencie todos os protocolos da loja</p>
+                               )}
+                               {currentView === 'allProtocols' && (
+                                   <p className="text-base text-gray-600 dark:text-gray-300">Visualize e gerencie todos os protocolos criados no sistema</p>
                                )}
                                {currentView === 'settings' && (
                                    <p className="text-base text-gray-600 dark:text-gray-300">Gerencie os tipos de documento disponíveis no sistema</p>
@@ -729,7 +999,16 @@ export default function Dashboard({ user, onLogout }) {
                 </header>
 
                 <section className={`p-4 sm:p-6 lg:p-8 ${currentView === 'settings' ? 'overflow-y-auto' : ''}`} aria-label="Conteúdo principal">
-                    {renderView()}
+                    {loadingDocuments && currentView === 'list' ? (
+                        <div className="flex items-center justify-center min-h-[400px]">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <p className="text-gray-600 dark:text-gray-400">Carregando protocolos...</p>
+                            </div>
+                        </div>
+                    ) : (
+                        renderView()
+                    )}
                 </section>
                 
                 <Footer />

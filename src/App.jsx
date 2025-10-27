@@ -3,6 +3,7 @@ import AuthComponent from './components/AuthComponent';
 import Dashboard from './components/Dashboard';
 import { Loader, AlertCircle } from 'lucide-react';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { AccessibilityProvider } from './components/AccessibilityAnnouncer';
 import './index.css';
 
@@ -87,13 +88,15 @@ export default function App() {
     
     return (
         <ThemeProvider>
-            <AccessibilityProvider>
-                {user ? (
-                    <Dashboard user={user} onLogout={handleLogout} />
-                ) : (
-                    <AuthComponent onLogin={handleLogin} />
-                )}
-            </AccessibilityProvider>
+            <ToastProvider>
+                <AccessibilityProvider>
+                    {user ? (
+                        <Dashboard user={user} onLogout={handleLogout} />
+                    ) : (
+                        <AuthComponent onLogin={handleLogin} />
+                    )}
+                </AccessibilityProvider>
+            </ToastProvider>
         </ThemeProvider>
     );
 }
